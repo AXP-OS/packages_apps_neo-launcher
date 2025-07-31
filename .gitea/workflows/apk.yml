@@ -126,7 +126,7 @@ jobs:
       repo: ${{ github.event.repository.name }} # without org!
       title: "!UNTESTED PRE-RELEASE! ${{ needs.build.outputs.APP_VERSION }}"
       tag: ${{ needs.build.outputs.APP_VERSION }}
-      targetc: merge
+      targetc: axp
       pre: true
       body: |
           # Neo - The AXP.OS Launcher
@@ -150,7 +150,7 @@ jobs:
       repo: ${{ github.event.repository.name }} # without org!
       title: "!UNTESTED PRE-RELEASE! ${{ needs.build.outputs.APP_VERSION }}"
       tag: ${{ needs.build.outputs.APP_VERSION }}
-      targetc: merge
+      targetc: axp
       pre: true
       #filepattern: '*.apk'
       body: >-
