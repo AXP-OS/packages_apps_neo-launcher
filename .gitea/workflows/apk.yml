@@ -59,7 +59,7 @@ jobs:
         rm -rf app/build/outputs/apk/
         ./gradlew --no-daemon assembleAospOmega
         find build/outputs
-        mv -v build/outputs/aospOmega/release/*.apk apks/${{vars.APK_NAME}}.apk
+        mv -v build/outputs/apk/aospOmega/release/*.apk apks/${{vars.APK_NAME}}.apk
 
     # https://github.com/marketplace/actions/sign-android-releases-apk
     - name: Sign APK
