@@ -21,7 +21,7 @@ jobs:
     #if: github.event.pull_request.merged == true || github.event_name == 'push'
     runs-on: docker-node-latest
     outputs:
-      SHA_LAV: ${{ steps.hash.outputs.SHA_LAV }}
+      APP_SHA: ${{ steps.hash.outputs.APP_SHA }}
       APP_VERSION: ${{ steps.hash.outputs.APP_VERSION }}
 
     steps:
@@ -56,9 +56,9 @@ jobs:
     - name: Build Release APK
       run: |
         mkdir apks
-        rm -rf app/build/outputs/apk/
+        rm -rf build/outputs/apk/
         ./gradlew --no-daemon assembleAospOmega
-        find build/outputs
+        #find build/outputs
         mv -v build/outputs/apk/aospOmega/release/*.apk apks/${{vars.APK_NAME}}.apk
 
     # https://github.com/marketplace/actions/sign-android-releases-apk
@@ -77,12 +77,12 @@ jobs:
     - name: Prep release
       id: hash
       run: |
-        APP_VERSION=$(grep -E "versionName " app/build.gradle | cut -d '"' -f 2)
+        APP_VERSION=$(grep -E "versionName " build.gradle.kts | cut -d '"' -f 2)
 
         cd apks
 
         sha512sum ${{vars.APK_NAME}}-signed.apk > ${{vars.APK_NAME}}-signed.apk.sha512
-        echo "SHA_LAV=$(cat ${{vars.APK_NAME}}-signed.apk.sha512 | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+        echo "APP_SHA=$(cat ${{vars.APK_NAME}}-signed.apk.sha512 | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
 
         REF_NAME=$(echo "${{ github.ref }}" | sed -e 's/refs\/heads\///' -e 's/refs\/tags\/v//' -e 's/release\/v//')
         echo "Cleaned name is ${REF_NAME}"
@@ -137,7 +137,7 @@ jobs:
 #
 #          |APK|sha512|
 #          |-|-|
-#          |${{vars.APK_NAME}}-signed.apk|${{ needs.build.outputs.SHA_LAV }}|
+#          |${{vars.APK_NAME}}-signed.apk|${{ needs.build.outputs.APP_SHA }}|
 
 #  release-github:
 #    name: "Release @github"
@@ -162,7 +162,7 @@ jobs:
 #          \n
 #          |APK|sha512|\n
 #          |-|-|\n
-#          |${{vars.APK_NAME}}-signed.apk|${{ needs.build.outputs.SHA_LAV }}|\n00
+#          |${{vars.APK_NAME}}-signed.apk|${{ needs.build.outputs.APP_SHA }}|\n00
 #
 #      filelist: >-
 #        ${{vars.APK_NAME}}-signed.apk
