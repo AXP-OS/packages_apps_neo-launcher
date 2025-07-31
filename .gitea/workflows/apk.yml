@@ -162,8 +162,7 @@ jobs:
           \n
           |APK|sha512|\n
           |-|-|\n
-         |${{vars.APK_NAME}}-signed.apk|${{ needs.build.outputs.APP_SHA }}|\n00
-
+         |${{vars.APK_NAME}}-signed.apk|${{ needs.build.outputs.APP_SHA }}|\n
       filelist: >-
         ${{vars.APK_NAME}}-signed.apk
         ${{vars.APK_NAME}}-signed.apk.sha512
