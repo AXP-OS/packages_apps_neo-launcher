@@ -1,0 +1,178 @@
+#####################################################################################
+# documentation:
+# - https://docs.gitea.com/usage/actions/overview
+# - https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows
+#####################################################################################
+
+name: Build APK
+
+on:
+  push:
+    paths:
+      - 'build.gradle.kts'
+  workflow_dispatch:  # button shown only when in default branch
+
+# NOT implemented in Gitea!
+#permissions:
+#  contents: write # allow creating releases
+
+jobs:
+  build:
+    #if: github.event.pull_request.merged == true || github.event_name == 'push'
+    runs-on: docker-node-latest
+    outputs:
+      SHA_LAV: ${{ steps.hash.outputs.SHA_LAV }}
+      APP_VERSION: ${{ steps.hash.outputs.APP_VERSION }}
+
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: set up JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '18'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4.4.1
+      with:
+        gradle-version: "current"
+        gradle-home-cache-cleanup: true
+
+    - name: Setup Android SDK
+      # https://github.com/android-actions/setup-android
+      uses: android-actions/setup-android@v3
+      with:
+        cmdline-tools-version: 13114758
+        #packages: "tools platform-tools build-tools;35.0.1"
+
+    - name: Build Release APK
+      run: |
+        mkdir apks
+        rm -rf app/build/outputs/apk/
+        ./gradlew --no-daemon :app:assembleRelease
+        mv -v app/build/outputs/apk/release/*.apk apks/${{vars.APK_NAME}}.apk
+
+    # https://github.com/marketplace/actions/sign-android-releases-apk
+    - name: Sign APK
+      id: signAPK
+      uses: NoCrypt/sign-android@main
+      with:
+        releaseDir: apks
+        signingKey: ${{ secrets.APK_SIGNING_KEY_64 }}
+        keyAlias: ${{ secrets.APK_ALIAS }}
+        keyStorePassword: ${{ secrets.APK_KEY_STORE_PASSWORD }}
+        keyPassword: ${{ secrets.APK_KEY_PASSWORD }}
+      env:
+        BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
+
+    - name: Prep release
+      id: hash
+      run: |
+        APP_VERSION=$(grep -E "versionName " app/build.gradle | cut -d '"' -f 2)
+
+        cd apks
+
+        sha512sum ${{vars.APK_NAME}}-signed.apk > ${{vars.APK_NAME}}-signed.apk.sha512
+        echo "SHA_LAV=$(cat ${{vars.APK_NAME}}-signed.apk.sha512 | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+
+        REF_NAME=$(echo "${{ github.ref }}" | sed -e 's/refs\/heads\///' -e 's/refs\/tags\/v//' -e 's/release\/v//')
+        echo "Cleaned name is ${REF_NAME}"
+        echo "branch=${REF_NAME}" >> "$GITHUB_OUTPUT"
+
+        echo "APP_VERSION=$APP_VERSION" >> $GITHUB_OUTPUT
+
+        cp -v ${{vars.APK_NAME}}-signed.apk ${{vars.APK_NAME}}_${APP_VERSION}.apk || exit 3
+        sha512sum ${{vars.APK_NAME}}_${APP_VERSION}.apk > ${{vars.APK_NAME}}_${APP_VERSION}.apk.sha512
+
+    - name: Upload all files as artifact
+      uses: actions/upload-artifact@v3
+      id: upload
+      with:
+        name: release-artifact
+        retention-days: 1
+        if-no-files-found: error
+        path: |
+          ${{ github.WORKSPACE }}/apks/${{vars.APK_NAME}}-signed.apk
+          ${{ github.WORKSPACE }}/apks/${{vars.APK_NAME}}-signed.apk.sha512
+
+    - name: Upload F-Droid apk as artifact
+      uses: actions/upload-artifact@v3
+      id: upload
+      with:
+        name: release-fdroid
+        retention-days: 1
+        if-no-files-found: error
+        path: |
+          ${{ github.WORKSPACE }}/apks/${{vars.APK_NAME}}_${{ steps.hash.outputs.APP_VERSION }}.apk
+          ${{ github.WORKSPACE }}/apks/${{vars.APK_NAME}}_${{ steps.hash.outputs.APP_VERSION }}.apk.sha512
+
+#  release-codeberg:
+#    name: "Release @Codeberg"
+#    uses: https://codeberg.org/AXP-OS/actions/.gitea/workflows/release_mirror_main.yaml@main
+#    runs-on: docker-node-latest
+#    needs: build
+#    secrets: inherit
+#    with:
+#      workflow_id: ${{ github.run_id }}
+#      repo: ${{ github.event.repository.name }} # without org!
+#      title: "!UNTESTED PRE-RELEASE! ${{ needs.build.outputs.APP_VERSION }}"
+#      tag: ${{ needs.build.outputs.APP_VERSION }}
+#      targetc: merge
+#      pre: true
+#      body: |
+#          # Neo - The AXP.OS Launcher
+#
+#          See:
+#          - [Documentation](https://axpos.org/docs/knowledge/launcher/)
+#          - [Signature](https://axpos.org/docs/knowledge/signatures/#axpos-app-signature)
+#
+#          |APK|sha512|
+#          |-|-|
+#          |${{vars.APK_NAME}}-signed.apk|${{ needs.build.outputs.SHA_LAV }}|
+
+#  release-github:
+#    name: "Release @github"
+#    uses: https://codeberg.org/AXP-OS/actions/.gitea/workflows/release_mirror_second.yaml@main
+#    runs-on: docker-node-latest
+#    needs: [ build, release-codeberg ]
+#    secrets: inherit
+#    with:
+#      workflow_id: ${{ github.run_id }}
+#      repo: ${{ github.event.repository.name }} # without org!
+#      title: "!UNTESTED PRE-RELEASE! ${{ needs.build.outputs.APP_VERSION }}"
+#      tag: ${{ needs.build.outputs.APP_VERSION }}
+#      targetc: merge
+#      pre: true
+#      #filepattern: '*.apk'
+#      body: >-
+#          # Neo - The AXP.OS Launcher\n
+#          \n
+#          See:\n
+#          - [Documentation](https://axpos.org/docs/knowledge/launcher/)\n
+#          - [Signature](https://axpos.org/docs/knowledge/signatures/#axpos-app-signature)\n
+#          \n
+#          |APK|sha512|\n
+#          |-|-|\n
+#          |${{vars.APK_NAME}}-signed.apk|${{ needs.build.outputs.SHA_LAV }}|\n00
+#
+#      filelist: >-
+#        ${{vars.APK_NAME}}-signed.apk
+#        ${{vars.APK_NAME}}-signed.apk.sha512
+
+  release-fdroid-cutting:
+    name: "Release @F-Droid Cutting"
+    uses: https://codeberg.org/AXP-OS/actions/.gitea/workflows/release_fdroid-cutting.yaml@main
+    runs-on: fdroid-cutting
+    needs: build
+    secrets: inherit
+    with:
+      workflow_id: ${{ github.run_id }}
+      repo: ${{ github.event.repository.name }} # without org!
