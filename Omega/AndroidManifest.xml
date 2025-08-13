@@ -81,7 +81,7 @@
             android:taskAffinity=""
             android:windowSoftInputMode="adjustPan">
 
-            <intent-filter>
+            <intent-filter android:priority="1000" android:order="1000">
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.HOME" />
