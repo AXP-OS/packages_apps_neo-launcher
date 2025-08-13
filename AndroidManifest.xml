@@ -56,7 +56,7 @@
             android:taskAffinity=""
             android:exported="true"
             android:enabled="true">
-            <intent-filter android:priority="1000" android:order="1000">
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.SHOW_WORK_APPS" />
                 <category android:name="android.intent.category.HOME" />
