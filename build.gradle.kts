@@ -41,8 +41,8 @@ android {
         targetSdk = 33
         applicationId = "com.saggitt.omega"
 
-        versionName = "1.0.0_AOS-10"
-        versionCode = 10010
+        versionName = "1.0.0_AOS-11"
+        versionCode = 10011
 
         buildConfigField("String", "BUILD_DATE", "\"${getBuildDate()}\"")
         buildConfigField("boolean", "ENABLE_AUTO_INSTALLS_LAYOUT", "false")
