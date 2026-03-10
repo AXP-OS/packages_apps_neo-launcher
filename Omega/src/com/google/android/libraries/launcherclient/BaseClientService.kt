@@ -26,35 +26,32 @@ import android.util.Log
 import com.neoapps.neolauncher.preferences.NeoPrefs
 
 open class BaseClientService(val context: Context, flags: Int) : ServiceConnection {
-    private var mConnected = false
+    private var isConnected = false
     private val mFlags = flags
     val prefs = NeoPrefs.getInstance()
-
-    private val prefObserver: (String?) -> Unit = {
-        if (it != "") {
-            mConnected = context.bindService(
-                LauncherClient.getIntent(context, false),
-                this,
-                mFlags
-            )
-        }
-    }
-
+    private var isEnabled = false
     fun connect(): Boolean {
-        if (!mConnected) {
+        if (!isConnected) {
             try {
-                prefObserver.invoke(prefs.feedProvider.getValue())
+                isEnabled = prefs.feedProvider.getValue() != ""
+                if (isEnabled) {
+                    isConnected = context.bindService(
+                        LauncherClient.getIntent(context, false),
+                        this,
+                        mFlags
+                    )
+                }
             } catch (e: Throwable) {
                 Log.e("LauncherClient", "Unable to connect to overlay service", e)
             }
         }
-        return mConnected
+        return isConnected
     }
 
     fun disconnect() {
-        if (mConnected) {
+        if (isConnected) {
             context.unbindService(this)
-            mConnected = false
+            isConnected = false
         }
     }
 
