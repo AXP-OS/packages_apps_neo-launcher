@@ -61,6 +61,7 @@ import com.android.launcher3.util.EdgeEffectCompat;
 import com.android.launcher3.util.IntSet;
 import com.android.launcher3.util.Thunk;
 import com.android.launcher3.views.ActivityContext;
+import com.neoapps.neolauncher.preferences.NeoPrefs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,8 +85,9 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
     private static final float SIGNIFICANT_MOVE_THRESHOLD = 0.4f;
 
     private static final float MAX_SCROLL_PROGRESS = 1.0f;
+    NeoPrefs prefs = NeoPrefs.getInstance();
 
-    private boolean mFreeScroll = false;
+    private boolean mFreeScroll = prefs.getDesktopFreeScrolling().getValue();
 
     private int mFlingThresholdVelocity;
     private int mEasyFlingThresholdVelocity;
@@ -1433,6 +1435,8 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
                     // We give flings precedence over large moves, which is why we short-circuit our
                     // test for a large move if a fling has been registered. That is, a large
                     // move to the left and fling to the right will register as a fling to the right.
+                    boolean cycleScrolling = prefs.getDesktopCycleScrolling().getValue();
+                    boolean feedEnabled = prefs.getFeedEnable().getValue();
 
                     if (((isSignificantMove && !isDeltaLeft && !isFling) ||
                             (isFling && !isVelocityLeft)) && mCurrentPage > 0) {
@@ -1440,13 +1444,16 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
                                 ? mCurrentPage : mCurrentPage - getPanelCount();
                         runOnPageScrollsInitialized(
                                 () -> snapToPageWithVelocity(finalPage, velocity));
-                    } else if (((isSignificantMove && isDeltaLeft && !isFling) ||
-                            (isFling && isVelocityLeft)) &&
-                            mCurrentPage < getChildCount() - 1) {
-                        finalPage = returnToOriginalPage
-                                ? mCurrentPage : mCurrentPage + getPanelCount();
-                        runOnPageScrollsInitialized(
-                                () -> snapToPageWithVelocity(finalPage, velocity));
+                    } else if (((isSignificantMove && isDeltaLeft && !isFling) || (isFling && isVelocityLeft)) && mCurrentPage < getChildCount() - 1) {
+                        finalPage = returnToOriginalPage ? mCurrentPage : mCurrentPage + getPanelCount();
+                        runOnPageScrollsInitialized(() -> snapToPageWithVelocity(finalPage, velocity));
+                    } else if (mCurrentPage == getChildCount() - 1 && cycleScrolling) {
+                        finalPage = returnToOriginalPage ? mCurrentPage : 0;
+                        snapToPageWithVelocity(finalPage, velocity);
+                    } else if (mCurrentPage == 0 && cycleScrolling && !feedEnabled) {
+                        finalPage = returnToOriginalPage ? mCurrentPage : getChildCount() - 1;
+                        snapToPageWithVelocity(finalPage, velocity);
+
                     } else {
                         runOnPageScrollsInitialized(this::snapToDestination);
                     }
@@ -1481,10 +1488,12 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
 
             // Detect if user tries to swipe to -1 page but gets disallowed by checking if there was
             // left-over values in mEdgeGlowLeft (or mEdgeGlowRight in RLT).
-            final int layoutDir = getLayoutDirection();
-            if ((mEdgeGlowLeft.getDistance() > 0 && layoutDir == LAYOUT_DIRECTION_LTR)
-                    || (mEdgeGlowRight.getDistance() > 0 && layoutDir == LAYOUT_DIRECTION_RTL)) {
-                onDisallowSwipeToMinusOnePage();
+            if (Utilities.ATLEAST_S) {
+                final int layoutDir = getLayoutDirection();
+                if ((mEdgeGlowLeft.getDistance() > 0 && layoutDir == LAYOUT_DIRECTION_LTR)
+                        || (mEdgeGlowRight.getDistance() > 0 && layoutDir == LAYOUT_DIRECTION_RTL)) {
+                    onDisallowSwipeToMinusOnePage();
+                }
             }
 
             mEdgeGlowLeft.onRelease(ev);

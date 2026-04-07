@@ -505,7 +505,15 @@ class NeoPrefs private constructor(val context: Context) {
         key = PrefKey.DESKTOP_FREE_SCROLLING,
         titleId = R.string.title_desktop_free_scrolling,
         defaultValue = false,
-        onChange = { recreate() },
+        onChange = { },
+    )
+
+    val desktopCycleScrolling = BooleanPref(
+        dataStore = dataStore,
+        key = PrefKey.DESKTOP_CYCLE_SCROLLING,
+        titleId = R.string.title_desktop_cycle_scrolling,
+        defaultValue = false,
+        onChange = { },
     )
 
     // Dock
@@ -709,6 +717,17 @@ class NeoPrefs private constructor(val context: Context) {
         steps = 150,
         specialOutputs = { "${(it * 100).roundToInt()}%" },
         onChange = { reloadGrid() }
+    )
+
+    val drawerAppSuggestions = BooleanPref(
+        dataStore = dataStore,
+        key = PrefKey.DRAWER_APP_SUGGESTIONS,
+        titleId = R.string.title_app_suggestions,
+        defaultValue = false,
+        onChange = {
+            reloadGrid()
+            pokeChange()
+        }
     )
 
     val drawerHideLabels = BooleanPref(
@@ -1121,6 +1140,13 @@ class NeoPrefs private constructor(val context: Context) {
         dataStore = dataStore,
         key = PrefKey.SEARCH_CONTACTS_ENABLED,
         titleId = R.string.title_search_contacts,
+        defaultValue = false,
+    )
+
+    var feedEnable = BooleanPref(
+        dataStore = dataStore,
+        key = PrefKey.FEED_ENABLE,
+        titleId = R.string.title_enable_feed,
         defaultValue = false,
     )
 

@@ -40,11 +40,13 @@ import com.neoapps.neolauncher.compose.components.BaseDialog
 import com.neoapps.neolauncher.compose.components.ViewWithActionBar
 import com.neoapps.neolauncher.compose.components.preferences.GridSizePrefDialogUI
 import com.neoapps.neolauncher.compose.components.preferences.IntSelectionPrefDialogUI
+import com.neoapps.neolauncher.compose.components.preferences.IntentLauncherDialogUI
 import com.neoapps.neolauncher.compose.components.preferences.PreferenceGroup
 import com.neoapps.neolauncher.compose.components.preferences.StringMultiSelectionPrefDialogUI
 import com.neoapps.neolauncher.compose.components.preferences.StringSelectionPrefDialogUI
 import com.neoapps.neolauncher.preferences.GridSize
 import com.neoapps.neolauncher.preferences.IntSelectionPref
+import com.neoapps.neolauncher.preferences.IntentLauncherPref
 import com.neoapps.neolauncher.preferences.LAYOUT_CATEGORIES
 import com.neoapps.neolauncher.preferences.LAYOUT_TABS
 import com.neoapps.neolauncher.preferences.StringMultiSelectionPref
@@ -73,6 +75,7 @@ fun DrawerPrefsPage() {
         mutableStateListOf(
             *listOfNotNull(
         //prefs.drawerGridSize,
+                prefs.drawerAppSuggestions,
         prefs.drawerSortMode,
                 prefs.drawerLayout,
                 if (prefs.drawerLayout.getValue() == LAYOUT_CATEGORIES) {
@@ -147,6 +150,11 @@ fun DrawerPrefsPage() {
     if (openDialog.value) {
         BaseDialog(openDialogCustom = openDialog) {
             when (dialogPref) {
+                is IntentLauncherPref -> IntentLauncherDialogUI(
+                    pref = dialogPref as IntentLauncherPref,
+                    openDialogCustom = openDialog
+                )
+
                 is IntSelectionPref         -> IntSelectionPrefDialogUI(
                     pref = dialogPref as IntSelectionPref,
                     openDialogCustom = openDialog

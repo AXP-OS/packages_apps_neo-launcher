@@ -16,7 +16,6 @@
 package com.android.launcher3.allapps;
 
 import static android.view.View.GONE;
-
 import static com.android.launcher3.allapps.SectionDecorationInfo.ROUND_BOTTOM_LEFT;
 import static com.android.launcher3.allapps.SectionDecorationInfo.ROUND_BOTTOM_RIGHT;
 import static com.android.launcher3.allapps.SectionDecorationInfo.ROUND_NOTHING;
@@ -25,7 +24,6 @@ import static com.android.launcher3.allapps.SectionDecorationInfo.ROUND_TOP_RIGH
 import static com.android.launcher3.allapps.UserProfileManager.STATE_DISABLED;
 import static com.android.launcher3.allapps.UserProfileManager.STATE_ENABLED;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -280,6 +278,7 @@ public abstract class BaseAllAppsAdapter
                                 privateProfileManager.getReadyToAnimate())
                                 && privateProfileManager.getCurrentState() == STATE_ENABLED
                                 ? 0 : 1);
+			/*
                         Log.d(TAG, "onBindViewHolder: "
                                 + "isPrivateSpaceItem: " + isPrivateSpaceItem
                                 + " isStateTransitioning: " + privateProfileManager.isStateTransitioning()
@@ -287,10 +286,13 @@ public abstract class BaseAllAppsAdapter
                                 + " readyToAnimate: " + privateProfileManager.getReadyToAnimate()
                                 + " currentState: " + privateProfileManager.getCurrentState()
                                 + " currentAlpha: " + icon.getAlpha());
+			 */
                     }
+
                     // Views can still be bounded before the app list is updated hence showing icons
                     // after collapsing.
-                    if (privateProfileManager.getCurrentState() == STATE_DISABLED
+
+                        if (privateProfileManager.getCurrentState() == STATE_DISABLED
                             && isPrivateSpaceItem) {
                         adapterItem.decorationInfo = null;
                         icon.setVisibility(GONE);

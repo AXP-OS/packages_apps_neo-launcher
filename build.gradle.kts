@@ -42,6 +42,7 @@ plugins {
     alias(libs.plugins.protobuf)
     alias(libs.plugins.dagger.hilt)
     alias(libs.plugins.google.ksp)
+    alias(libs.plugins.gradle.toolchains) apply false
 }
 allprojects {
     plugins.withType<AndroidBasePlugin>().configureEach {
@@ -145,8 +146,15 @@ android {
         }
 
         release {
-            isMinifyEnabled = false
-            setProguardFiles(listOf("proguard-android-optimize.txt", "proguard.flags"))
+            isMinifyEnabled = true
+            isShrinkResources = true
+        }
+        all {
+            isCrunchPngs = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard.flags"
+            )
         }
     }
 
@@ -199,8 +207,24 @@ android {
 
     sourceSets {
         named("main") {
-            java.directories.addAll(listOf("src", "src_plugins", "src_no_quickstep", "compose"))
-            kotlin.directories.addAll(listOf("src", "src_plugins", "src_no_quickstep", "compose"))
+            java.directories.addAll(
+                listOf(
+                    "src",
+                    "src_plugins",
+                    "shared",
+                    "src_no_quickstep",
+                    "compose"
+                )
+            )
+            kotlin.directories.addAll(
+                listOf(
+                    "src",
+                    "src_plugins",
+                    "shared",
+                    "src_no_quickstep",
+                    "compose"
+                )
+            )
             res.directories.add("res")
             assets.directories.add("assets")
             manifest.srcFile("AndroidManifest-common.xml")
@@ -253,6 +277,7 @@ dependencies {
     implementation(project(":smartspace"))
     implementation(project(":widgetpicker"))
     implementation(project(":wmshell"))
+    compileOnly(files("$FRAMEWORK_PREBUILTS_DIR/framework-16.jar"))
     compileOnly(files("$FRAMEWORK_PREBUILTS_DIR/SystemUI-core-16.jar"))
     compileOnly(files("$FRAMEWORK_PREBUILTS_DIR/SystemUI-statsd-16.jar"))
     compileOnly(files("$FRAMEWORK_PREBUILTS_DIR/WindowManager-Shell-16.jar"))
