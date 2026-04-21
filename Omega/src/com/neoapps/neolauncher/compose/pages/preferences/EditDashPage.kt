@@ -21,11 +21,13 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,7 +35,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,6 +53,9 @@ import com.android.launcher3.R
 import com.neoapps.neolauncher.compose.components.ListItemWithIcon
 import com.neoapps.neolauncher.compose.components.ViewWithActionBar
 import com.neoapps.neolauncher.compose.components.move
+import com.neoapps.neolauncher.compose.icons.Phosphor
+import com.neoapps.neolauncher.compose.icons.phosphor.ArrowsDownUp
+import com.neoapps.neolauncher.compose.icons.phosphor.Plus
 import com.neoapps.neolauncher.dash.dashProviderOptions
 import com.neoapps.neolauncher.preferences.NeoPrefs
 import com.neoapps.neolauncher.preferences.iconIds
@@ -108,13 +112,17 @@ fun EditDashPage() {
                     text = stringResource(id = R.string.enabled_events),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
             itemsIndexed(enabledItems, key = { _, it -> it.key }) { subIndex, item ->
                 ReorderableItem(
                     reorderableListState,
                     key = item.key,
+                    modifier = Modifier.animateItem(),
                 ) { isDragging ->
                     val elevation by animateDpAsState(
                         if (isDragging) 16.dp else 0.dp,
@@ -122,7 +130,7 @@ fun EditDashPage() {
                     )
                     val bgColor by animateColorAsState(
                         if (isDragging) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainer,
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
                         label = "bgColor",
                     )
 
@@ -146,43 +154,31 @@ fun EditDashPage() {
                                 modifier = Modifier.size(30.dp)
                             )
                         },
-                        endCheckbox = {
-                            IconButton(
-                                modifier = Modifier.size(36.dp),
-                                onClick = {
-                                    enabledItems.remove(item)
-                                    disabledItems.add(0, item)
-                                }
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_plus),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        },
+                        icon = Phosphor.ArrowsDownUp,
                     )
                 }
             }
 
             stickyHeader {
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(id = R.string.tap_to_enable),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
             itemsIndexed(disabledItems, key = { _, it -> it.key }) { subIndex, item ->
                 ListItemWithIcon(
                     modifier = Modifier
+                        .animateItem()
                         .clip(GroupItemShape(subIndex, disabledItems.size - 1))
                         .clickable {
                             disabledItems.remove(item)
                             enabledItems.add(item)
                         },
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     title = stringResource(id = item.titleResId),
                     startIcon = {
                         Image(
@@ -193,9 +189,7 @@ fun EditDashPage() {
                             modifier = Modifier.size(30.dp)
                         )
                     },
-                    endCheckbox = {
-                        Spacer(modifier = Modifier.height(32.dp))
-                    },
+                    icon = Phosphor.Plus,
                 )
             }
 
