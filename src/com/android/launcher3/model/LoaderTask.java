@@ -213,7 +213,7 @@ public class LoaderTask implements Runnable {
         mPmHelper = pmHelper;
         mSessionHelper = sessionHelper;
         mIconCache = iconCache;
-        mInstallingPkgsCached = null;
+        mInstallingPkgsCached = mSessionHelper.getActiveSessions();
         mFolderNameProviderFactory = folderNameProviderFactory;
         mRestoreEventLoggerProvider = restoreEventLoggerFactory;
         mExtraItemsProvider = extraItemsProvider;
@@ -265,12 +265,8 @@ public class LoaderTask implements Runnable {
             logASplit("Sending first screen broadcast with shouldAttachArchivingExtras="
                     + shouldAttachArchivingExtras);
             broadcastModels.forEach(bm -> bm.sentBroadcast(mContext));
-        } else {
-            logASplit("Sending first screen broadcast");
-            //mFirstScreenBroadcastHelper.sendBroadcasts(mContext, firstScreenItems);
         }
     }
-
 
     private void loadAllSurfacesOrdered(
             LoaderMemoryLogger memoryLogger, LauncherRestoreEventLogger restoreEventLogger) {
@@ -460,7 +456,7 @@ public class LoaderTask implements Runnable {
             mPendingPackages.clear();
 
             final HashMap<PackageUserKey, SessionInfo> installingPkgs = mSessionHelper.getActiveSessions();
-            if (Flags.enableSupportForArchiving()) {
+            if (Utilities.ATLEAST_V && Flags.enableSupportForArchiving()) {
                 mInstallingPkgsCached = installingPkgs;
             }
             installingPkgs.forEach(mIconCache::updateSessionCache);
@@ -650,7 +646,7 @@ public class LoaderTask implements Runnable {
                 LauncherActivityInfo app = apps.get(i);
                 AppInfo appInfo = new AppInfo(app, cachedUserInfo,
                         ApiWrapper.INSTANCE.get(mContext), mPmHelper);
-                if (Flags.enableSupportForArchiving() && app.getApplicationInfo().isArchived) {
+                if (Utilities.ATLEAST_V && Flags.enableSupportForArchiving() && app.getApplicationInfo().isArchived) {
                     // For archived apps, include progress info in case there is a pending
                     // install session post restart of device.
                     String appPackageName = app.getApplicationInfo().packageName;

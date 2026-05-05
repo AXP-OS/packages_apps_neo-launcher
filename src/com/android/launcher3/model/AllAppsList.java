@@ -29,6 +29,7 @@ import android.os.UserHandle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.android.launcher3.Flags;
 import com.android.launcher3.compat.AlphabeticIndexCompat;
@@ -41,6 +42,8 @@ import com.android.launcher3.model.repository.AppsListRepository;
 import com.android.launcher3.pm.PackageInstallInfo;
 import com.android.launcher3.pm.UserCache;
 import com.android.launcher3.util.ApiWrapper;
+import com.android.launcher3.util.ApplicationInfoWrapper;
+import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.FlagOp;
 import com.android.launcher3.util.PackageManagerHelper;
 import com.neoapps.neolauncher.allapps.HiddenAppFilter;
@@ -148,6 +151,30 @@ public class AllAppsList {
     }
 
     /**
+     * Returns whether the in-memory app list still matches LauncherApps.
+     */
+    public boolean matchesLauncherApps(Context context, List<UserHandle> users) {
+        final LauncherApps launcherApps = context.getSystemService(LauncherApps.class);
+        final Set<ComponentKey> expectedApps = new HashSet<>();
+        for (UserHandle user : users) {
+            for (LauncherActivityInfo activityInfo : launcherApps.getActivityList(null, user)) {
+                ComponentName componentName = activityInfo.getComponentName();
+                if (mAppFilter.shouldShowApp(componentName)) {
+                    expectedApps.add(new ComponentKey(componentName, user));
+                }
+            }
+        }
+
+        final Set<ComponentKey> loadedApps = new HashSet<>();
+        for (AppInfo appInfo : data) {
+            if (appInfo.componentName != null) {
+                loadedApps.add(new ComponentKey(appInfo.componentName, appInfo.user));
+            }
+        }
+        return loadedApps.equals(expectedApps);
+    }
+
+    /**
      * Add the supplied ApplicationInfo objects to the list, and enqueue it into the
      * list to broadcast when notify() is called.
      *
@@ -175,6 +202,35 @@ public class AllAppsList {
         data.add(info);
         mDataChanged = true;
     }
+
+    @Nullable
+    public AppInfo addPromiseApp(Context context, PackageInstallInfo installInfo) {
+        return addPromiseApp(context, installInfo, true);
+    }
+
+    @Nullable
+    public AppInfo addPromiseApp(
+            Context context, PackageInstallInfo installInfo, boolean loadIcon) {
+        // only if not yet installed
+        if (new ApplicationInfoWrapper(context, installInfo.packageName, installInfo.user)
+                .isInstalled()) {
+            return null;
+        }
+        AppInfo promiseAppInfo = new AppInfo(installInfo);
+
+        if (loadIcon) {
+            mIconCache.getTitleAndIcon(promiseAppInfo, promiseAppInfo.getMatchingLookupFlag());
+            promiseAppInfo.sectionName = mIndex.computeSectionName(promiseAppInfo.title);
+        } else {
+            promiseAppInfo.title = "";
+        }
+
+        data.add(promiseAppInfo);
+        mDataChanged = true;
+
+        return promiseAppInfo;
+    }
+
 
     public void updateSectionName(AppInfo appInfo) {
         appInfo.sectionName = mIndex.computeSectionName(appInfo.title);
