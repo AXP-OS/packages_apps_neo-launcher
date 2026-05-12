@@ -51,7 +51,7 @@ class CustomIconProvider @JvmOverloads @Inject constructor(
 
     private val prefs = NeoPrefs.getInstance()
     private val iconPackPref = prefs.profileIconPack
-    private val drawerThemedIcons get() = prefs.profileThemedIcons.getValue()
+    private val themedIconsEnabled get() = prefs.profileThemedIcons.getValue()
     private var isOlderLawnIconsInstalled =
         context.packageManager.getPackageVersionCode(LAWNICONS_PACKAGE_NAME) in 1..3
     private val iconPackProvider = IconPackProvider.INSTANCE.get(context)
@@ -65,14 +65,10 @@ class CustomIconProvider @JvmOverloads @Inject constructor(
         get() = iconPackProvider.getIconPack(iconPackPref.getValue())?.apply { loadBlocking() }
     private val themeMap: Map<String, ThemeData>
         get() {
-            if (drawerThemedIcons && !(isOlderLawnIconsInstalled)) {
+            if (!themedIconsEnabled) {
                 mThemedIconMap = DISABLED_MAP
             }
             if (mThemedIconMap == null) {
-                mThemedIconMap = getThemedIconMap()
-            }
-            if (isOlderLawnIconsInstalled && iconPackPref.getValue() == LAWNICONS_PACKAGE_NAME) {
-                themeMapName = iconPackPref.getValue()
                 mThemedIconMap = getThemedIconMap()
             }
             if (themedIconPack != null && themeMapName != themedIconPack!!.packPackageName) {
@@ -85,9 +81,16 @@ class CustomIconProvider @JvmOverloads @Inject constructor(
 
     init {
         setIconThemeSupported(themeManager.isIconThemeEnabled && supportsIconTheme)
-
     }
 
+    fun setIconThemeSupported(isSupported: Boolean) {
+        mThemedIconMap = if (isSupported && isOlderLawnIconsInstalled) null else DISABLED_MAP
+    }
+
+    override fun updateSystemState() {
+        super.updateSystemState()
+        mSystemState += ",${iconPackPref.getValue()},$themedIconsEnabled"
+    }
     private fun resolveIconEntry(componentName: ComponentName, user: UserHandle): IconEntry? {
         val componentKey = ComponentKey(componentName, user)
         val overrideItem = overrideRepo.overridesMap[componentKey]
@@ -122,7 +125,7 @@ class CustomIconProvider @JvmOverloads @Inject constructor(
         val themeData = getThemeDataForPackage(packageName)
         var themedIcon: Drawable? = null
 
-        val themedColors = ThemedIconDrawable.getColors(context)
+        val themedColors = ThemedIconDrawable.getThemedColors(context)
 
         if (iconEntry != null) {
             val clock = iconPackProvider.getClockMetadata(iconEntry)
@@ -130,9 +133,8 @@ class CustomIconProvider @JvmOverloads @Inject constructor(
             if (iconEntry.type == IconType.Calendar) {
                 iconPackEntry = iconEntry.resolveDynamicCalendar(getDay())
             }
-
             when {
-                !drawerThemedIcons -> {
+                !themedIconsEnabled -> {
                     themedIcon = null
                 }
 
@@ -173,29 +175,8 @@ class CustomIconProvider @JvmOverloads @Inject constructor(
         return themedIcon ?: iconPackIcon ?: super.getIcon(info, appInfo, iconDpi)
     }
 
-    fun setIconThemeSupported(isSupported: Boolean) {
-        mThemedIconMap = if (isSupported && isOlderLawnIconsInstalled) null else DISABLED_MAP
-    }
-
-    override fun updateSystemState() {
-        super.updateSystemState()
-        mSystemState += ",${iconPackPref.getValue()},$drawerThemedIcons"
-    }
-
     override fun getIcon(info: ComponentInfo?): Drawable {
         return CustomAdaptiveIconDrawable.wrapNonNull(super.getIcon(info))
-    }
-
-    override fun getIcon(info: ComponentInfo?, iconDpi: Int): Drawable {
-        return CustomAdaptiveIconDrawable.wrapNonNull(super.getIcon(info, iconDpi))
-    }
-
-    override fun getIcon(info: ApplicationInfo?): Drawable {
-        return CustomAdaptiveIconDrawable.wrapNonNull(super.getIcon(info))
-    }
-
-    override fun getIcon(info: ApplicationInfo?, iconDpi: Int): Drawable {
-        return CustomAdaptiveIconDrawable.wrapNonNull(super.getIcon(info, iconDpi))
     }
 
     companion object {
