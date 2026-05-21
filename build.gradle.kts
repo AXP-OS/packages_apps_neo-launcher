@@ -91,9 +91,9 @@ android {
         applicationId = "com.saggitt.omega"
         javaCompileOptions.annotationProcessorOptions.arguments["dagger.hilt.disableModulesHaveInstallInCheck"] =
             "true"
-        versionName = "1.0.1"
-        versionCode = 1007
-        buildConfigField("String", "BUILD_DATE", "\"${getBuildDate()}\"")
+        versionName = "1.0.0_AOS-12"
+        versionCode = 10012
+ 1     buildConfigField("String", "BUILD_DATE", "\"${getBuildDate()}\"")
         buildConfigField("boolean", "ENABLE_AUTO_INSTALLS_LAYOUT", "false")
         buildConfigField("boolean", "IS_DEBUG_DEVICE", "false")
         buildConfigField("boolean", "IS_STUDIO_BUILD", "false")
