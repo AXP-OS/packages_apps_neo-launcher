@@ -9,7 +9,7 @@
 # - sync otherwise
 ############################################################################################
 
-name: "Mirror repo to ${{ vars.MIRROR_ORG_NAME }}"
+name: "Mirror repo to CODEBERG"
 run-name: Initiated by ${{ gitea.actor }}
 on:
   push:
